@@ -1,0 +1,73 @@
+#!/bin/sh
+
+desc="create line plot from agplus output"
+usage="usage: `basename $0` [-o outfile.pdf] [-s sdev] [-r from,to] [-t title] agplus-output.txt"
+
+range="-5000,5000"
+sdev=20
+
+while getopts ho:c:r:s:t: opt
+do
+	case ${opt} in
+		h)
+      		echo ${desc}
+      		echo ${usage}
+      		exit 1;;
+    o)
+      outfile=${OPTARG};;
+    c)
+      control=${OPTARG};;
+    r)
+      range=${OPTARG};;
+    s)
+      sdev=${OPTARG};;
+    t)
+      title=${OPTARG};;
+		\?)
+      echo ${usage}
+			exit 1;;
+	esac
+done
+
+shift `expr $OPTIND - 1`
+
+if ! [ -f $1 ];then
+  echo "[error] $1: no such file"
+  exit 1   
+fi
+
+if ! [ -f $control ];then
+  echo "[error] $control: no such file"
+  exit 1   
+fi
+
+if [ -z $outfile ];then
+  outfile=agpline_`basename $1 .txt`.pdf
+fi
+
+if [ -z "$title" ];then
+  title=`basename $1 .txt`
+fi
+
+Rscript - <<EOS
+library(RColorBrewer)
+X <- read.table("$1",head=TRUE,row.names=1)
+if("$control"!="") X <- X - read.table("$control",head=TRUE,row.names=1) 
+A <- apply(X,2,function(x) filter(x,dnorm(seq(-4*$sdev,4*$sdev)-0.5,0,$sdev)))
+head(A)
+rownames(A) <- rownames(X)
+if(ncol(X) < 3) {
+	pal <- brewer.pal(ncol(X),'Set1')
+} else {
+	pal <- rev(brewer.pal(ncol(X),'Spectral'))
+}
+pdf(file="$outfile",width=7,height=5,paper='special',family='sans',title="$title")
+matplot(NA,xlab='distance', ylab='average density',
+	xlim=c($range), ylim=range(A,na.rm=TRUE), main="$title")
+rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col ="darkgrey")
+matlines(rownames(A), A, col=pal, lty=1, lwd=2)
+legend('topleft',colnames(A),lwd=2,lty=1,col=pal,box.lwd=0,bty="n")
+abline(v=0,lwd=1,lty=2,col='black')
+dev.off()
+EOS
+

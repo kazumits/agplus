@@ -1,0 +1,100 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+
+class String
+  def tabsplit
+    self.chomp.split("\t")
+  end
+end
+
+# defaults
+distfrom   = 'start'
+reference  = nil
+assignment = nil
+outfile    = nil
+range      = -5000..5000
+
+# output field names of 'bedtools window'
+fieldname = [
+  :rchr,:rleft,:rright,
+  :rname,:rscore,:rstrand,
+  :chr,:left,:right,:score
+]
+
+opt = OptionParser.new
+opt.on_head('fast & light-weight & flexible wiggle/bedgraph aggregator (beta)')
+opt.banner << " -b reference.bed [WIG/BEDGRAPH file(it expects STDIN if ommited)]"
+opt.on("-b","--reference=file","reference BED, requires strand(6th column) field (default: none, required)") {|v| reference=v}
+opt.on("-d","--distance-from=origin","distance from start/center/end of the references is used (default: start)") {|v| distfrom=v}
+opt.on("-o","--out=file","output file name (default: STDOUT)") {|v| outfile=v}
+opt.on("-r","--range=from,to","aggregating range in base-pairs (default:-5000,5000)") {|v| range=Range.new(*v.split(',').map(&:to_i))}
+opt.on("-a","--assignment=file","name->group assignment table, 2-column and tab-separated") {|v| assignment=v}
+
+begin
+  opt.parse!
+rescue OptionParser::ParseError => e
+  STDERR.puts e.message
+  exit(1)
+end
+
+if reference.nil?
+  STDERR.puts '[error] you need reference bed file (-b)'
+  exit(1)
+end
+
+infile  = ARGV[0].nil? ? 'stdin' : ARGV[0]
+outfile = outfile.nil? ? STDOUT  : open(outfile,'w')
+
+if assignment.nil?
+  # aggregate into 'whole' group (whole aggregation mode)
+  assign = Hash.new('whole') # assign 'whole' to any IDs
+  group  = ['whole'] # single group
+  nmemb  = {'whole'=>open(reference,'r').readlines.size}
+else
+  # assigment table format: 
+  # ID(e.g. gene,peak,factor names in ref.bed)[tab]assigned group name
+  assign = Hash[open(assignment,'r').readlines.map(&:tabsplit)]
+  group = assign.values.uniq # group labels
+  # count number of region with the same ID in ref.bed
+  refid = open(reference,'r').readlines.map{|x| x.tabsplit[3]}
+  numid = refid.inject(Hash.new(0)) {|h,i| h[i] += 1; h}
+  nmemb = assign.keys.inject(Hash.new(0)) {|h,i| h[assign[i]] += numid[i]; h}
+end
+
+agr = Hash[group.zip(group.size.times.map{Array.new(range.max-range.min+1,0.0)})]
+cmd = "bedtools window -w #{range.max_by(&:abs).abs} -a #{reference} -b #{infile}"
+
+IO::popen(cmd).each do |line|
+  d = Hash[fieldname.zip(line.tabsplit)]
+  # STDERR.print d
+  next if d[:score].eql?(0) or (target = assign[d[:rname]]).nil?
+  origin = 
+    case distfrom
+      when 'start','TSS'
+        d[:rstrand].eql?('+') ? d[:rleft].to_i : d[:rright].to_i - 1
+      when 'end','stop','TES','TTS' 
+        d[:rstrand].eql?('+') ? d[:rright].to_i - 1 : d[:rleft].to_i
+      when 'center','centre'
+        (d[:rleft].to_i + d[:rright].to_i - 1)/2
+      else nil
+    end
+  left  = d[:left].to_i  - origin
+  right = d[:right].to_i - origin - 1
+  left, right = -right, -left if d[:rstrand].eql?('-')
+  # STDERR.puts [d[:rname],target,origin,left,right,d[:score]].join("\t")
+  # skip if 'left' and 'right' is out of range
+  next if right < range.min or left > range.max
+  # truncate by range
+  left  = [left,  range.min].max
+  right = [right, range.max].min
+  (left..right).each{|i| agr[target][i-range.min] += d[:score].to_f}
+end
+
+# calculate average depth
+group.each{|g| agr[g].map!{|x| x/nmemb[g]}}
+
+# output
+outfile.puts ['distance',*agr.keys].join("\t") 
+[range.to_a,*agr.values].transpose.each{|x| outfile.puts x.join("\t")}
+outfile.close

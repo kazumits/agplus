@@ -1,0 +1,68 @@
+#!/bin/sh
+desc="create bigWig file counting shifted-points from 5' of reads (counts are RPM-scaled)"
+usage="usage: `basename $0` [-o outfile.bw] [-s shiftsize (default: 73)] -g chrom.sizes BAM"
+
+shiftsize=73
+
+while getopts hs:o:g: opt
+do
+	case ${opt} in
+		h)
+      		echo ${desc}
+      		echo ${usage}
+      		exit 1;;
+    o)
+      outfile=${OPTARG};;
+    s)
+      shiftsize=${OPTARG};;
+    g)
+      chromsize=${OPTARG};;
+		\?)
+      echo ${usage}
+			exit 1;;
+	esac
+done
+
+shift `expr $OPTIND - 1`
+
+if ! [ -f $1 ];then
+  echo "[error] $1: no such file"
+  exit 1   
+fi
+
+if ! [ -f $1 ];then
+  echo "[error] $1: invalid chrom.size or none specified"
+  exit 1   
+fi
+
+if [ -z $outfile ];then
+  outfile=`basename $1 .bam`_sp${shiftsize}.bw
+fi
+
+ibam=$1
+
+echo -n "[info] counting total #reads..." >&2
+
+numreads=`samtools view -c $ibam`
+rpmscale=`echo "scale=6;1000000/$numreads" | bc`
+
+echo "done!" >&2
+
+echo "[info] total #reads: $numreads" >&2
+echo "[info] RPM scaling factor: $rpmscale" >&2
+
+echo -n "[info] running bedtools and bigWig conversion..." >&2
+
+bedtools bamtobed -i $ibam |\
+awk -vFS="\t" -vOFS="\t" -vshift=$shiftsize '
+$6=="+" {
+  print $1, $2, $2 + shift, $4, $5, $6
+};
+$6=="-"{
+  left = $3 - shift;
+  print $1, (left < 0) ? 0 : left, $3, $4, $5, $6
+};' |\
+bedtools genomecov -g $chromsize -3 -bg -scale $rpmscale -i stdin |\
+wigToBigWig -clip stdin $chromsize $outfile
+
+echo "done!" >&2
