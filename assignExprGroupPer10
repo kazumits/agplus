@@ -58,7 +58,6 @@ args <- commandArgs(TRUE)
 fpkm <- read.genes_fpkm(args[1],"$colname")
 tbl <- assignExprGroupPer10(fpkm)
 g <- rownames(tbl)
-head(tbl)
 
 invisible(mapply(function(x,xname){
 	ord <- order(x)

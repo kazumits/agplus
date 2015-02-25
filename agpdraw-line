@@ -54,7 +54,6 @@ library(RColorBrewer)
 X <- read.table("$1",head=TRUE,row.names=1)
 if("$control"!="") X <- X - read.table("$control",head=TRUE,row.names=1) 
 A <- apply(X,2,function(x) filter(x,dnorm(seq(-4*$sdev,4*$sdev)-0.5,0,$sdev)))
-head(A)
 rownames(A) <- rownames(X)
 if(ncol(X) < 3) {
 	pal <- brewer.pal(ncol(X),'Set1')
