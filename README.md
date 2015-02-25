@@ -23,7 +23,8 @@ Place the **agplus** file and the supporting shell scripts anywhere you like. Yo
 * [R](http://www.r-project.org): required by **agpdraw-line** and **assignExprGroupPer10**
 * RColorBrewer package of R: required by **agpdraw-line**
 
-The wigToBigWig and bigWigToWig are available at http://hgdownload.cse.ucsc.edu/admin/exe/
+The wigToBigWig and bigWigToWig are available at 
+http://hgdownload.cse.ucsc.edu/admin/exe/
 
 You will also need *chrom.size* file to run **bam2bwshifted**. This file is a two-column text file of chromosome sizes. Please generate the file if you have not yet. In the case of human genome (hg19), simply run the following command after installing fetchChromSizes (UCSC):
 
@@ -92,7 +93,8 @@ chr1    10015   10016   0.052102
 ### Reference
 
 The *reference* where you will aggregate *target* should be in BED6 format (6 columns BED). Typically, this file can be taken from a public database such as UCSC's table browser.
-An example reference file of a gene locus looks like the following:
+
+An example reference file of a gene locus looks like the following:
 
 ```
 chr1    11873   14409   DDX11L1 0       +
@@ -106,7 +108,8 @@ chr1    69090   70008   OR4F5   0       +
 ### Assignment
 
 The group *assignment* should be a two-column, tab-delimited text file. Typically, you might write the *assignment* definitions such as "gene-name[tab]group-name" per line in this file. Note that you do not need to write out all the names defined in *reference* here.
-An example of *assignment* file of Up/Down/Stay genes groups looks like the following:
+
+An example of *assignment* file of Up/Down/Stay genes groups looks like the following:
 
 ```
 WASH7P	Upregulated
@@ -157,7 +160,7 @@ Additionally, you need a gene locus definition file in BED6 format as *reference
 Step 1: generate a coverage track (bigWig) file of fragment midpoints (`-s 100`; half-size of 200 bp) from the *target* BAM file
 
 ```
-bam2bwshifted -s 100 -g hg19.chrom.sizes wgEncodeBroadHistoneHelas3H3k27acStdAlnRep1.bam
+bam2bwshifted -s 100 -g hg19.chrom.sizes -o HeLaS3_H3K27ac.bw wgEncodeBroadHistoneHelas3H3k27acStdAlnRep1.bam
 ```
 
 Step 2: decompress the bigWig file to treat with **agplus**
@@ -169,7 +172,7 @@ bigWigToWig HeLaS3_H3K27ac.bw HeLaS3_H3K27ac.wig
 Step 3: aggregate *target* signals at all TSSs defined in *reference*
 
 ```
-agplus -b refFlat_hg19_simple.bed -d start -o aggr_HeLaS3_H3K27ac.txt
+agplus -b refFlat_hg19_simple.bed -d start -o aggr_HeLaS3_H3K27ac.txt HeLaS3_H3K27ac.wig
 ```
 
 The aggregation process takes about 2 minutes assuming the use of  Intel(R) Xeon(R) CPU E5-2687W @ 3.10GHz on x86_64 GNU/Linux)
@@ -197,7 +200,8 @@ Please note that the aggregation is done against all TSSs when you omit the `-a`
 ### Grouping by assignment file
 
 If you would like to see the distribution by expression levels, incorporate the following procedure after Step 2.
-Create an assignment file from the genes.fpkm_tracking file.
+
+Create an assignment file from the genes.fpkm_tracking file.
 
 ```
 assignExprGroupPer10 genes.fpkm_tracking
