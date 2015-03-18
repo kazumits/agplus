@@ -42,7 +42,7 @@ read.genes_fpkm <- function(file, genename='gene_id')
 
 assignExprGroupPer10<- function(fpkm)
 {
-  glabel <- paste0('q',seq(0,90,10),'to',seq(10,100,10),'th')
+  glabel <- paste('q',seq(0,90,10),'to',seq(10,100,10),'th',sep='')
   egroup <- apply(fpkm,2,function(x)
 	  cut(x,breaks=quantile(x[x>0],seq(0,1,0.1)),include.lowest=TRUE,label=glabel)
   )          
@@ -61,7 +61,7 @@ g <- rownames(tbl)
 
 invisible(mapply(function(x,xname){
 	ord <- order(x)
-	filename <- paste0("${outdir}/",xname,"_ePer10.txt")
+	filename <- paste("${outdir}/",xname,"_ePer10.txt",sep='')
 	res <- data.frame(g[ord],x[ord])
 	write.table(res,file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
 }, tbl, colnames(tbl)))
