@@ -58,10 +58,10 @@ bam2bwshifted [-o outfile.bw] [-s shiftsize (default: 73)] -g chrom.sizes BAM
 
 ### assignExprGroupPer10
 
-generates *assignment* file of expression level groups (10%ile interval) from the *genes_fpkm.tracking* file of cufflinks (cuffdiff).
+generates *assignment* file of expression level groups (10%ile interval) from the *genes.fpkm_tracking* file of cufflinks (cuffdiff).
 
 ```
-assignExprGroupPer10 [-o outputdir] [-c column-name-of-gene] genes_fpkm.tracking
+assignExprGroupPer10 [-o outputdir] [-c column-name-of-gene] genes.fpkm_tracking
 ```
 
 ### agpdraw-line
