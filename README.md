@@ -4,33 +4,148 @@ agplus: a rapid and flexible tool for aggregation plots
 What's this for?
 ----------------
 
-**agplus**, is a simple command-line tool, enables rapid and flexible production of text tables tailored for aggregation plots from which users can easily design multiple groups based on user-definitions such as regulatory regions or transcription initiation sites.
+**agplus** is a simple command-line tool that enables rapid and flexible production of text tables tailored for aggregation plots from which users can easily design multiple groups based on user-definitions such as regulatory regions or transcription initiation sites.
 
 
 Installation
 ------------
+
+### Brief installation summary
 
 Ruby and BEDTools are required to run **agplus**.
 
 * [Ruby](https://www.ruby-lang.org) (version >2.0)
 * [BEDTools](http://bedtools.readthedocs.org)
 
-Place the **agplus** file and the supporting shell scripts anywhere you like. You will need the below software to use our supporting shell scripts (**bam2bwshifted**, **agpdraw-line** and **assignExprGroupPer10**) and to follow our Tutorial at the last section in this README.
+Place the **agplus** file and the supporting shell scripts anywhere you like. You will need the below software to use our supporting shell scripts (**bam2bwshifted**, **agpdraw-line** and **assignExprGroup**) and to follow our Tutorial section in this README.
 
 * wigToBigWig: required by **bam2bwshifted**
 * bigWigToWig: required in the Tutorial
 * [SAMtools](http://samtools.sourceforge.net): required by **bam2bwshifted**
-* [R](http://www.r-project.org): required by **agpdraw-line** and **assignExprGroupPer10**
+* [R](http://www.r-project.org): required by **agpdraw-line** and **assignExprGroup**
 * RColorBrewer package of R: required by **agpdraw-line**
 
 The wigToBigWig and bigWigToWig are available at 
-http://hgdownload.cse.ucsc.edu/admin/exe/
+<http://hgdownload.cse.ucsc.edu/admin/exe/>
 
-You will also need *chrom.size* file to run **bam2bwshifted**. This file is a two-column text file of chromosome sizes. Please generate the file if you have not yet. In the case of human genome (hg19), simply run the following command after installing fetchChromSizes (UCSC):
+You will also need *chrom.size* file to run **bam2bwshifted**. This file is a two-column text file of chromosome sizes. Please prepare the file if you have not yet. The example of generating *hg19.chrom.sizes* is in our Tutorial.
+
+### Step by step installation instruction
+
+For OSX users, we recommend to install [Homebrew](http://brew.sh). It is the easiest way to setup the environment to run agplus and we assume homebrew is already installed on your system. After installing homebrew, please "tap" homebrew/science repository, which contains hundreds of bioinformatics tools.
 
 ```
-fetchChromSizes hg19 > hg19.chrom.sizes
+brew tap homebrew/science
 ```
+
+Here we also assume that the user is under the *bash* shell environment and all tools are installed under the user's home directory (~/bin). Please set up the PATH environment as below.
+
+```
+mkdir ~/bin
+echo 'export PATH=$HOME/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+```
+
+#### Ruby
+
+We recommend Ruby version > 1.9. The version 2.x is preferable for computation speed. There are several way to install Ruby but we recommend the instructions below.
+
+<https://www.ruby-lang.org/en/documentation/installation/>
+
+
+#### R
+
+For RedHat-based Linux users,
+
+```
+sudo yum install R
+```
+
+For Ubuntu users, please follow the instruction below.
+
+<http://cran.r-project.org/bin/linux/ubuntu/README>
+
+For OSX users after installing homebrew, just type:
+
+```
+brew install r
+```
+
+After installing R, please type the below command in R to install the *RColorBrewer* package.
+
+```
+install.packages("RColorBrewer")
+```
+
+#### SAMTools
+
+For Ubuntu users,
+
+```
+apt-get install samtools
+```
+
+For OSX users,
+
+```
+brew install samtools
+```
+
+For the Redhat-based system,
+
+```
+yum install samtools
+```
+
+Please note that samtools is available at the EPEL repository.
+
+#### BEDtools
+
+Debian/Ubuntu:
+
+```
+apt-get install bedtools
+```
+
+RedHat - Fedora/Centos:
+
+```
+yum install bedtools
+```
+
+OSX:
+
+```
+brew install bedtools
+```
+
+
+#### Kent tools (fetchChromSizes, bigWigToWig, wigToBigWig)
+
+Please download *bigWigToWig*, *wigToBigWig* and *fetchChromSizes* from
+
+Linux: <http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/>
+
+OSX: <http://hgdownload.cse.ucsc.edu/admin/exe/macOSX.x86_64/>
+
+and place them into ~/bin.
+
+```
+chmod +x fetchChromSizes bigWigToWig wigToBigWig
+mv fetchChromSizes bigWigToWig wigToBigWig ~/bin
+```
+
+#### agplus
+
+The installation process of agplus simply requires copying the files into ~/bin.
+
+```
+git clone https://github.com/kazumits/agplus.git
+cd agplus
+cp agplus agpdraw-line assignExprGroup bam2bwshifted ~/bin
+```
+
+If you does not have git, please download [the zipped file](https://github.com/kazumits/agplus/archive/master.zip) and copy the scripts into ~/bin.
 
 Usage
 ------------------
@@ -56,12 +171,12 @@ converts BAM files into a coverage track (bigWig) of N bp shifted positions of t
 bam2bwshifted [-o outfile.bw] [-s shiftsize (default: 73)] -g chrom.sizes BAM
 ```
 
-### assignExprGroupPer10
+### assignExprGroup
 
-generates *assignment* file of expression level groups (10%ile interval) from the *genes.fpkm_tracking* file of cufflinks (cuffdiff).
+generates *assignment* file of expression level groups (given `-i` percentile expression level interval) from the *genes.fpkm_tracking* file of cufflinks (or cuffdiff).
 
 ```
-assignExprGroupPer10 [-o outputdir] [-c column-name-of-gene] genes.fpkm_tracking
+assignExprGroup [-i interval] [-o outputdir] [-c column-name-of-gene] genes.fpkm_tracking
 ```
 
 ### agpdraw-line
@@ -77,7 +192,7 @@ File formats
 
 ### Target
 
-The *target* of your ChIP-Seq analysis, should be in wiggle or bedgraph format.
+The *target* of your ChIP-Seq analysis should be in wiggle or bedgraph format.
 
 Example:
 
@@ -107,7 +222,7 @@ chr1    69090   70008   OR4F5   0       +
 
 ### Assignment
 
-The group *assignment* should be a two-column, tab-delimited text file. Typically, you might write the *assignment* definitions such as "gene-name[tab]group-name" per line in this file. Note that you do not need to write out all the names defined in *reference* here.
+The group *assignment* should be a two-column, tab-delimited text file. Typically, you write the *assignment* definitions, such as "gene-name[tab]group-name", per line in this file. Note that you do not need to write out all the names defined in *reference* here.
 
 An example of *assignment* file of Up/Down/Stay genes groups looks like the following:
 
@@ -122,7 +237,7 @@ FAM138F	Stay
 
 ### Output
 
-The output file of **agplus** is simple tab-delimited table of average signal intensities in 1 bp per line. The table can be easily handled by subsequent analysis, using either gnuplot, R, Matlab or MS Excel etc.
+The output file of **agplus** is simple tab-delimited table of average signal intensities in 1 bp per line. The table can be easily handled by subsequent analysis using gnuplot, R, Matlab, MS Excel, etc.
 
 Example:
 
@@ -151,11 +266,17 @@ You need to download the BAM file of H3K27ac ChIP-Seq from UCSC.
 
 We recommend using [UDR](http://rabadan.c2b2.columbia.edu/ENCODE/newsarch.html#091213) for faster downloading of ENCODE data from UCSC.
 
-To define expression groups using **assignExprGroupPer10**, you need the *genes.fpkm_tracking* file of cufflinks (or cuffdiff) output using [this bam](http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqHelas3R2x75Il200AlignsRep1V2.bam). For convenience, we prepared a pre-calculated *genes.fpkm_tracking* file of HeLa-S3. Please download [the file](http://chromatin.med.kyushu-u.ac.jp/maehara/agplus/genes.fpkm_tracking.gz) and decompress it.
+To define expression groups using **assignExprGroup**, you need the *genes.fpkm_tracking* file of cufflinks (or cuffdiff) output using [this bam](http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeCaltechRnaSeq/wgEncodeCaltechRnaSeqHelas3R2x75Il200AlignsRep1V2.bam). For convenience, we prepared a pre-calculated *genes.fpkm_tracking* file of HeLa-S3. Please download [the file](http://chromatin.med.kyushu-u.ac.jp/maehara/agplus/genes.fpkm_tracking.gz) and decompress it.
 
 Additionally, you need a gene locus definition file in BED6 format as *reference*. We prepared a parsed file from UCSC's hg19 refFlat definition for **agplus** (available from the table browser). Please download [the file](http://chromatin.med.kyushu-u.ac.jp/maehara/agplus/refFlat_hg19_simple.bed.gz) and decompress it.
 
 ### Four steps to generating an aggregation plot
+
+Please prepare the hg19.chrom.sizes to follow this tutorial.
+
+```
+fetchChromSizes hg19 > hg19.chrom.sizes
+```
 
 Step 1: generate a coverage track (bigWig) file of fragment midpoints (`-s 100`; half-size of 200 bp) from the *target* BAM file
 
@@ -204,7 +325,7 @@ If you would like to see the distribution by expression levels, incorporate the 
 Create an assignment file from the genes.fpkm_tracking file.
 
 ```
-assignExprGroupPer10 genes.fpkm_tracking
+assignExprGroup -i 10 genes.fpkm_tracking
 ```
 
 The output file is produced under the *assignedPer10* directory. Please check the file *egroup_ePer10.txt* that is automatically generated as the *assignment* file. The *assignment* file is the group definition of genes per 10%ile interval gene expression levels. (The output will be a multiple text file of different samples when the file is from *cuffdiff*.)
@@ -228,3 +349,101 @@ The result:
 ![H3K27ac by Expression groups](example/H3K27acByExpression.png)
 
 
+Advanced example: H3K4me1 distributions on ChromHMM segments
+------------------------------------------------------------
+
+This example aims to visualize the distributions of H3K4me1 signal, which is related to enhancer regions on each genomic segment predicted by [ChromHMM](http://compbio.mit.edu/ChromHMM/).
+
+Download and unzip chromHMM bed for K562 cells.
+
+```
+wget http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeBroadHmm/wgEncodeBroadHmmK562HMM.bed.gz
+gunzip wgEncodeBroadHmmK562HMM.bed.gz
+```
+
+Reformat the file into 6-column BED with strand so that agplus can handle it as reference.
+
+```
+awk -v OFS="\t" '{print $1,$2,$3,$4,0,"+"}' wgEncodeBroadHmmK562HMM.bed > chromHMM_K562_reformatted.bed
+```
+
+The strands were all fixed at "+" because there is no infromation of orientation in the file.
+
+Create a tab-delimited assignment file manually as below with any text editor or MS Excel and then save it as `assign_chromHMM.txt`.  You can  copy & paste this example but you should be aware that the delimiters should be **tab**s (tabs are often transformed into multiple white spaces when pasting).
+
+```
+1_Active_Promoter	ActivePromoter
+2_Weak_Promoter	WeakPromoter
+3_Poised_Promoter	PoisedPromoter
+4_Strong_Enhancer	StrongEnhancer
+5_Strong_Enhancer	StrongEnhancer
+6_Weak_Enhancer	WeakEnhancer
+7_Weak_Enhancer	WeakEnhancer
+8_Insulator	Insulator
+9_Txn_Transition	TxnTransition
+10_Txn_Elongation	TxnElongation
+11_Weak_Txn	WeakTxn
+12_Repressed	Repressed
+13_Heterochrom/lo	Heterochrom_Lo
+```
+
+The names of the first column were taken from ChromHMM definition (4th column in original file). We merged some categories (the second column; StrongEnhancer and WeakEnhancer) to reduce the use of colors in the plot of this example.
+
+
+Download K562 H3K4me1 ChIP-Seq data (mapped bam file) using [udr](http://rabadan.c2b2.columbia.edu/ENCODE/newsarch.html#091213).
+
+```
+udr rsync -avP hgdownload-sd.sdsc.edu::goldenPath/hg19/encodeDCC/wgEncodeBroadHistone/wgEncodeBroadHistoneK562H3k4me1StdAlnRep1.bam .
+```
+
+Create mid-points count file (bigWig) from the bam.
+
+```
+bam2bwshifted -s 100 -g hg19.chrom.sizes -o K562_H3K4me1.bw wgEncodeBroadHistoneK562Ezh239875StdAlnRep1.bam
+```
+
+Run agplus using the prepared files above.
+
+```
+bigWigToWig K562_H3K4me1.bw stdout | agplus -b chromHMM_K562_reformatted.bed -d center -a assign_chromHMM.txt -o aggr_K562_H3K4me1_chromHMM.txt
+```
+
+The caluclation takes about 30 min (30 times longer than Tutorial) because chromHMM reference is about 30 times larger than gene definition (23,975 vs. 622,257 lines).
+
+Finally, you will get the plot PDF shown below.
+
+```
+agpdraw-line -t "K562 H3K4me1" aggr_K562_H3K4me1_chromHMM.txt 
+```
+
+![K562 H3K4me1 on ChromHMM](example/K562_H3K4me1_chromHMM.png)
+
+
+FAQ
+----
+
+Q. What is "average density" that agpdraw-line reports?
+
+A. The area under the curve in plot makes group-averaged read/peak number. The "density" was defined so that the area under the (smoothed) curve makes total aggregated read/peak numbers. agplus reports the averaged densities over group members which is defined in the reference and assignment files. Please note that the read count is RPM (Read Per Million) normalized when you use bam2bwshifted.
+
+
+Q. Can agplus aggregate **peaks** (not raw reads)?
+
+A. Yes. agplus can accepts peak-called file (BED or BED-like format) after reformatting. For example, peaks were recorded in `peaks.bed` file:
+
+```
+awk -v OFS="\t" '{print $1,$2,$3,1}' peaks.bed > peaks.wig
+```
+
+and give "peaks.wig" as the target file of agplus. In this case, "average density" of the plot can be regarded as "average peak detection rate".
+
+If the peaks file contains a score column (tag-count, p-value, fold-enrichment, etc.) and you would like to calculate average of the scores, you can replace `{print $1,$2,$3,1}` to `{print $1,$2,$3,$7}` if you want to use the 7th column of the original BED file as the score.
+
+We recommend using the peak summits file as target/reference file if available. Using peak summits could improve accuracy/resolution of signal source positioning. 
+
+
+Q. How to change the look of the plot (colors, line widths, drawing range of y-axis).
+
+A. We recommend using your own line drawing software to change the looks freely. The output file of agplus is a simple text table and thus can be easily imported into any software, e.g. MS Excel, gnuplot, R, Matlab (or you can directly edit the output PDF by vector graphics software like Adobe's Illustrator). 
+
+Please note that the line-smoothing function is part of agpdraw-line and thus is not done by agplus. We provided agpdraw-line as a visual example of agplus output and consider it is sufficient in most cases.

@@ -1,18 +1,20 @@
 #!/bin/sh
 
-desc="assign expression level (10%ile interval) groups from genes_fpkm.tracking (cufflinks/cuffdiff)"
-usage="usage: `basename $0` [-o outputdir] [-c column-name-of-gene] genes_fpkm.tracking"
+desc="assign expression level (given percentile interval) groups from genes_fpkm.tracking (cufflinks/cuffdiff)"
+usage="usage: `basename $0` [-i 10/20/25/50] [-o outputdir] [-c column-name-of-gene] genes_fpkm.tracking"
 
 colname="gene_id"
-outdir="./assignedPer10"
+interval=10
 
-while getopts ho:c: opt
+while getopts hi:o:c: opt
 do
 	case ${opt} in
 		h)
       		echo ${desc}
       		echo ${usage}
       		exit 1;;
+    i)
+      interval=${OPTARG};;
     c)
       colname=${OPTARG};;
     o)
@@ -23,8 +25,15 @@ do
 	esac
 done
 
+if [ $interval -ne 10 ] && [ $interval -ne 20 ] && [ $interval -ne 25 ] && [ $interval -ne 50 ]
+then
+	echo "[error] the interval should be 10, 20, 25 or 50"
+	exit 1
+fi
+
 shift `expr $OPTIND - 1`
 
+outdir="./assignedPer$interval"
 mkdir -p $outdir
 
 Rscript - $* <<EOS
@@ -40,11 +49,11 @@ read.genes_fpkm <- function(file, genename='gene_id')
   apply(fpkm,2,function(x) tapply(x,unlist(g),mean))
 }
 
-assignExprGroupPer10<- function(fpkm)
+assignExprGroup<- function(fpkm,interval=10)
 {
-  glabel <- paste('q',seq(0,90,10),'to',seq(10,100,10),'th',sep='')
+  glabel <- paste('q',seq(0,100-interval,interval),'to',seq(interval,100,interval),'th',sep='')
   egroup <- apply(fpkm,2,function(x)
-	  cut(x,breaks=quantile(x[x>0],seq(0,1,0.1)),include.lowest=TRUE,label=glabel)
+	  cut(x,breaks=quantile(x[x>0],seq(0,1,interval/100)),include.lowest=TRUE,label=glabel)
   )          
   egroup[is.na(egroup)] <- 'zero'
   rownames(egroup) <- rownames(fpkm)
@@ -56,12 +65,12 @@ assignExprGroupPer10<- function(fpkm)
 args <- commandArgs(TRUE)
 
 fpkm <- read.genes_fpkm(args[1],"$colname")
-tbl <- assignExprGroupPer10(fpkm)
+tbl <- assignExprGroup(fpkm,$interval)
 g <- rownames(tbl)
 
 invisible(mapply(function(x,xname){
 	ord <- order(x)
-	filename <- paste("${outdir}/",xname,"_ePer10.txt",sep='')
+	filename <- paste("${outdir}/",xname,"_ePer$interval.txt",sep='')
 	res <- data.frame(g[ord],x[ord])
 	write.table(res,file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
 }, tbl, colnames(tbl)))
