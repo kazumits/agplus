@@ -145,7 +145,7 @@ cd agplus
 cp agplus agpdraw-line assignExprGroup bam2bwshifted ~/bin
 ```
 
-If you does not have git, please download [the zipped file](https://github.com/kazumits/agplus/archive/master.zip) and copy the scripts into ~/bin.
+If you don't feel like using the git version, please download [the release version of agplus](https://github.com/kazumits/agplus/releases) and copy the scripts into ~/bin.
 
 Usage
 ------------------
@@ -399,7 +399,7 @@ udr rsync -avP hgdownload-sd.sdsc.edu::goldenPath/hg19/encodeDCC/wgEncodeBroadHi
 Create mid-points count file (bigWig) from the bam.
 
 ```
-bam2bwshifted -s 100 -g hg19.chrom.sizes -o K562_H3K4me1.bw wgEncodeBroadHistoneK562Ezh239875StdAlnRep1.bam
+bam2bwshifted -s 100 -g hg19.chrom.sizes -o K562_H3K4me1.bw wgEncodeBroadHistoneK562H3k4me1StdAlnRep1.bam
 ```
 
 Run agplus using the prepared files above.
