@@ -447,3 +447,12 @@ Q. How to change the look of the plot (colors, line widths, drawing range of y-a
 A. We recommend using your own line drawing software to change the looks freely. The output file of agplus is a simple text table and thus can be easily imported into any software, e.g. MS Excel, gnuplot, R, Matlab (or you can directly edit the output PDF by vector graphics software like Adobe's Illustrator). 
 
 Please note that the line-smoothing function is part of agpdraw-line and thus is not done by agplus. We provided agpdraw-line as a visual example of agplus output and consider it is sufficient in most cases.
+
+
+Citation
+--------
+
+Plese cite the following reference:
+
++ Kazumitsu Maehara and Yasuyuki Ohkawa, agplus: a rapid and flexible tool for aggregation plots, Bioinformatics, 2015,
+doi: [10.1093/bioinformatics/btv322](http://dx.doi.org/10.1093/bioinformatics/btv322)
