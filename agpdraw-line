@@ -51,8 +51,9 @@ fi
 
 Rscript - <<EOS
 library(RColorBrewer)
-X <- read.table("$1",head=TRUE,row.names=1)
-if("$control"!="") X <- X - read.table("$control",head=TRUE,row.names=1) 
+X <- read.delim("$1",head=FALSE,row.names=1)
+labels <- unlist(strsplit(scan("$1","character",nlines=1,sep="\n"),"\t"))[-1]
+if("$control"!="") X <- X - read.delim("$control",head=FALSE,row.names=1) 
 A <- apply(X,2,function(x) filter(x,dnorm(seq(-4*$sdev,4*$sdev)-0.5,0,$sdev)))
 rownames(A) <- rownames(X)
 if(ncol(X) < 3) {
@@ -61,11 +62,11 @@ if(ncol(X) < 3) {
 	pal <- rev(brewer.pal(ncol(X),'Spectral'))
 }
 pdf(file="$outfile",width=7,height=5,paper='special',family='sans',title="$title")
-matplot(NA,xlab='distance', ylab='average density',
+matplot(NA,xlab='Distance', ylab='Average density',
 	xlim=c($range), ylim=range(A,na.rm=TRUE), main="$title")
 rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col ="darkgrey")
 matlines(rownames(A), A, col=pal, lty=1, lwd=2)
-legend('topleft',colnames(A),lwd=2,lty=1,col=pal,box.lwd=0,bty="n")
+legend('topleft',labels,lwd=2,lty=1,col=pal,box.lwd=0,bty="n")
 abline(v=0,lwd=1,lty=2,col='black')
 dev.off()
 EOS
