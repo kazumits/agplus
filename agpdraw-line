@@ -51,9 +51,9 @@ fi
 
 Rscript - <<EOS
 library(RColorBrewer)
-X <- read.delim("$1",head=FALSE,row.names=1)
+X <- read.delim("$1",head=FALSE,row.names=1,skip=1)
 labels <- unlist(strsplit(scan("$1","character",nlines=1,sep="\n"),"\t"))[-1]
-if("$control"!="") X <- X - read.delim("$control",head=FALSE,row.names=1) 
+if("$control"!="") X <- X - read.delim("$control",head=TRUE,row.names=1) 
 A <- apply(X,2,function(x) filter(x,dnorm(seq(-4*$sdev,4*$sdev)-0.5,0,$sdev)))
 rownames(A) <- rownames(X)
 if(ncol(X) < 3) {
